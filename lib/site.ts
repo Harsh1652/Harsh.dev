@@ -1,6 +1,6 @@
 // Single source of truth for SEO metadata, structured data, sitemap and llms.txt.
 // Set NEXT_PUBLIC_SITE_URL in the environment when a custom domain is attached.
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://portfolio-harsh1652s-projects.vercel.app").replace(/\/$/, "");
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://harsh-dev-pi.vercel.app").replace(/\/$/, "");
 
 export const site = {
   name: "Harsh Gupta",
