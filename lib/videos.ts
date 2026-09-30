@@ -304,6 +304,137 @@ export const videos: Video[] = [
       },
     ],
   },
+  {
+    id: "HtM_fq0SXa4",
+    slug: "wg-kv-write-gated-kv-cache",
+    title: "AI Is Wasting Its Memory: WG-KV",
+    description:
+      "AI doesn't need to remember everything. A breakdown of WG-KV (Write-Gated KV Cache): instead of storing every token in the KV cache and evicting later, a lightweight write-gate predicts which tokens are worth keeping before they are ever written to long-term memory.",
+    summary:
+      "In long-context AI systems the KV cache grows with every token, and during decoding the model keeps reading all of it, so memory becomes the bottleneck. Harsh Gupta explains WG-KV, which moves the keep-or-drop decision earlier: recent tokens sit in a local sliding window, and a lightweight, head-specific write-gate decides which ones get promoted to a global cache. He covers why a smaller cache doesn't automatically mean faster inference, the reported Llama 3.1 results, and the core risk: a gate that discards a token the model needs later.",
+    uploadDate: "2026-09-30T07:30:27-07:00",
+    duration: "PT7M52S",
+    durationLabel: "7:52",
+    topics: ["KV cache", "WG-KV", "LLM inference", "Long-context AI", "Memory bandwidth", "AI infrastructure"],
+    takeaways: [
+      "The KV cache stores key and value representations for every token so the model doesn't recompute them, and it grows with context length.",
+      "During decoding the model repeatedly reads that cache, so long contexts and many concurrent requests turn memory into a system bottleneck.",
+      "Quantization, GQA/MQA, paged KV cache and eviction all still write everything first. Write-gating asks whether a token is worth storing before it is stored.",
+      "WG-KV keeps recent tokens in a local sliding window, then decides whether each one is promoted to a global cache or discarded as it leaves the window.",
+      "The write-gate is lightweight and can be head-specific, because different attention heads care about different kinds of information.",
+      "A smaller cache doesn't automatically mean proportionally faster inference. Latency depends on memory bandwidth, access patterns, batch size and workload.",
+      "The core risk is prediction: a token that looks irrelevant now may be exactly what the model needs thousands of tokens later.",
+    ],
+    chapters: [
+      {
+        start: 0,
+        title: "Does AI really need to remember everything?",
+        paragraphs: [
+          "Imagine you give an AI a document with 1.5 million tokens and ask it a very basic question. The model might only need one specific piece of information from that document, but to maintain that much context, it has to hold a huge amount of memory.",
+          "So the question is: does an AI really need to remember everything?",
+          "Hey, I'm Harsh, and on this channel we break down what's actually happening inside the systems, from models and agents all the way to the infrastructure running them at scale. Today we'll talk about WG-KV, an approach that asks a really interesting question: what does a model actually need to remember?",
+        ],
+      },
+      {
+        start: 35,
+        title: "Why the KV cache becomes a bottleneck",
+        paragraphs: [
+          "Model systems use something called the KV cache so they can remember previous tokens. As the context gets longer, the KV cache gets bigger too. But here's the interesting part: not every token is equally useful.",
+          "When a model processes a token, key and value representations are created and stored in the KV cache. Then, when the model generates the next token, it can reuse these representations instead of recalculating everything from scratch. The problem is that as the context grows, the KV cache grows right along with it.",
+          "During generation, the model repeatedly reads from this stored context. So in long conversations, large documents, or when many users are running at once, memory becomes a serious system bottleneck. In production there isn't just one user: hundreds or thousands of requests run simultaneously, and each one can have its own KV cache.",
+          "So the core problem becomes: how do we retain context without carrying everything forever? There are many ways to tackle this. We can quantize the cache, reduce the number of KV heads with techniques like GQA and MQA, use a paged KV cache to use memory more efficiently, or selectively evict information from the cache.",
+        ],
+      },
+      {
+        start: 107,
+        title: "Why write everything in the first place?",
+        paragraphs: [
+          "But there's an even more interesting question: why write everything in the first place? If we have to decide later whether a token is useful, why not make that decision upfront, before storing it permanently?",
+          "That is the core idea behind write-gating. Instead of saying \"store everything first and clean it up later\", the system asks right at the start: is this token worth remembering? If yes, it goes into the persistent cache. If not, it never gets committed to long-term memory.",
+          "But there's a catch. What if a token seems useless right now but turns out to be critically important later? If we drop it immediately and the model needs that information in the future, it's permanently lost.",
+        ],
+      },
+      {
+        start: 145,
+        title: "WG-KV: local vs global memory",
+        paragraphs: [
+          "So in WG-KV, you don't have to make an immediate, permanent decision. Recent tokens can be kept inside a local sliding-window context; think of it as short-term memory. As tokens slide out of the window, the system decides whether to promote them to the global cache or simply discard them.",
+          "We humans do something very similar. We don't permanently store every sentence of every conversation. Recent exchanges stay easily accessible in active memory, while notable things, like someone's name, a deadline or a great idea, stay fixed in our mind.",
+        ],
+      },
+      {
+        start: 177,
+        title: "How the write-gate works",
+        paragraphs: [
+          "Technically, WG-KV uses a lightweight write-gate. It examines token representations and computes a score predicting how useful that token will be in the future.",
+          "And here's another interesting detail: different attention heads care about different types of information. One head might focus on local relationships while another focuses on broader semantic patterns. So gating can also be head-specific, meaning different attention heads don't all assign the same importance to a token. The gate can evaluate different representations of the key states, for example operating on pre-RoPE or post-RoPE representations. But memorizing the exact math isn't the main point.",
+          "The important principle is that before committing anything to memory, the system actively tries to estimate the token's value. So now there are two tiers of memory. The local cache holds recent context that remains temporarily available, and the global cache holds tokens the system decided were worth preserving.",
+          "When the model generates subsequent tokens, it uses both the recent local context and the selectively retained global context. So instead of treating the entire history as equally important, the system maintains a much leaner, higher-utility memory.",
+        ],
+      },
+      {
+        start: 244,
+        title: "The shift: write selectively",
+        paragraphs: [
+          "This is the core conceptual shift. The traditional approach is: write everything, read everything, and evict later. WG-KV moves that decision earlier in the pipeline: predict utility, write selectively, and retain what truly matters.",
+          "Imagine a coding agent working with a massive repository. It encounters function signatures, class definitions, imports, variables, documentation, and thousands of lines of boilerplate. Over the long run, a function signature or class structure is essential, while repetitive boilerplate doesn't need to be preserved at the same level.",
+          "Now there's an important distinction. During prefill, the model processes the existing context and builds the KV cache. During decoding, it repeatedly uses cached information to generate new tokens. But we have to be careful here: a smaller cache doesn't automatically make the model proportionately faster. Real-world latency depends on memory bandwidth, hardware utilization, memory access patterns, batch sizes and workloads.",
+          "Especially during decoding, systems can be heavily constrained by memory bandwidth. So if we can avoid storing and repeatedly reading unnecessary KV states, memory traffic drops significantly, which can be a huge win for long contexts and coding workloads.",
+          "Reportedly, experiments with WG-KV on Llama 3.1 showed roughly 46% to 57% lower memory footprint, around 3.03x to 3.45x higher throughput, and around 1.8x to 2.0x faster decoding under the evaluated settings. This matters more as context length grows: the larger the context, the more expensive it is to carry every single token forward. Long-context evaluations were run on contexts stretching into hundreds of thousands of tokens.",
+        ],
+      },
+      {
+        start: 350,
+        title: "What if the gate is wrong?",
+        paragraphs: [
+          "However, this approach has one fundamental vulnerability: the system is trying to predict future utility, which is inherently hard. A token that seems irrelevant right now might become mission-critical later.",
+          "Imagine an obscure fact inside a long document that appears only once in the entire text. The gate might decide that since it only showed up once, it's probably unimportant. Then the user asks about exactly that fact, and the information is already gone from the persistent cache.",
+          "In codebases this gets even more delicate. A variable name might not look significant at first, until an external function references it later. Or a class definition suddenly becomes essential because of a dependency thousands of tokens away. Predicting importance is not simple, and selective memory isn't magic. It's a trade-off between memory efficiency and the real risk of discarding useful information.",
+        ],
+      },
+      {
+        start: 396,
+        title: "Smarter memory for AI",
+        paragraphs: [
+          "That's why, to me, the most compelling part of WG-KV isn't just its benchmark numbers. It's the architectural philosophy. The common trend in the industry has been to throw more compute, more GPUs, more memory and longer contexts at the problem. But we could also ask: what if the system simply stopped carrying around information it never actually needs?",
+          "Just remember this mental model. The old approach: store everything, then evict what you don't need. The WG-KV approach: estimate what matters, then store selectively.",
+          "And this principle isn't limited to KV cache optimization. Whenever AI systems manage massive volumes of information, there's a fundamental design question: does everything have to stay active all the time? Maybe the future isn't just about giving AI larger memory, but smarter memory management.",
+          "So WG-KV tries to instill a simple discipline: don't store everything first and then decide what was valuable. Try to predict upfront what might matter, and make the decision as memory is written, because sometimes the fastest memory is the memory you never had to keep.",
+          "If you enjoy deep engineering breakdowns of AI systems, not just what models can do but how these architectures are actually engineered at scale, subscribe to the channel and hit the bell for more videos like this.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: "What is the KV cache?",
+        a: "When a transformer processes a token, it creates key and value representations and stores them in the KV cache. When generating the next token it reuses them instead of recomputing the whole context. The cache grows with context length, and the model reads from it repeatedly during decoding.",
+      },
+      {
+        q: "What is WG-KV?",
+        a: "WG-KV (Write-Gated KV Cache) uses a lightweight write-gate to score each token's predicted future usefulness before it is committed to the persistent cache. Instead of storing everything and evicting later, it writes selectively and retains only what is likely to matter.",
+      },
+      {
+        q: "How is write-gating different from KV cache eviction?",
+        a: "Eviction stores every token and removes some later. Write-gating makes the decision earlier, as memory is written, so tokens judged low-value are never committed to the long-term cache in the first place.",
+      },
+      {
+        q: "What are local and global memory in WG-KV?",
+        a: "Recent tokens stay in a local sliding-window cache, like short-term memory. As they slide out of the window, the gate decides whether to promote them to the global cache or discard them. During generation the model attends to both.",
+      },
+      {
+        q: "Does a smaller KV cache make inference faster?",
+        a: "Not automatically or proportionally. Real latency depends on memory bandwidth, hardware utilization, memory access patterns, batch size and workload. But decoding is often memory-bandwidth bound, so reading fewer KV states can cut memory traffic significantly.",
+      },
+      {
+        q: "What results were reported for WG-KV?",
+        a: "Reported experiments on Llama 3.1 showed roughly 46-57% lower memory footprint, around 3.03x-3.45x higher throughput and around 1.8x-2.0x faster decoding under the evaluated settings, with long-context evaluations reaching hundreds of thousands of tokens.",
+      },
+      {
+        q: "What is the main risk of write-gating?",
+        a: "The gate has to predict future usefulness. A fact that appears once in a long document, or a variable referenced much later in a codebase, may be discarded even though the model needs it later. It's a trade-off between memory efficiency and losing useful information.",
+      },
+    ],
+  },
 ];
 
 // `videos` is kept in publication order. Display order is derived from the upload date,
