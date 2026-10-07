@@ -435,6 +435,146 @@ export const videos: Video[] = [
       },
     ],
   },
+  {
+    id: "AxQdBgvTuWE",
+    slug: "how-ai-agent-proxies-work",
+    title: "How AI Agent Proxies Actually Work",
+    description:
+      "What happens when an AI agent has access to your GitHub, database, payment system, MCP tools and multiple LLMs? If the agent decides to issue a ₹90 refund but its limit is ₹50, who stops it? A breakdown of proxies and gateways for AI agents: from basic network proxies to LLM gateways, tool access and policy enforcement.",
+    summary:
+      "A proxy is a simple middleman: the application talks to the proxy, the proxy routes to the destination, and the response comes back the same way. AI agents change the problem because an agent chooses its own next action, so the question stops being how to route a request and becomes what the agent should be allowed to do. Harsh Gupta walks through the three boundaries that follow: a network proxy for outbound traffic, an LLM gateway that centralizes model access, credentials and cost tracking, and a tool gateway that inspects tool calls and their parameters against policy. The mental model is one sentence: the agent decides, the gateway enforces.",
+    uploadDate: "2026-10-07T05:25:20-07:00",
+    duration: "PT6M52S",
+    durationLabel: "6:52",
+    topics: ["AI agents", "AI gateway", "LLM gateway", "Proxies", "MCP", "Policy enforcement", "System design"],
+    takeaways: [
+      "A proxy sits between an application and a server, routes requests and returns responses along the same path. That middleman position enables routing, traffic control, logging, access policies and infrastructure isolation.",
+      "Agents change the problem: a normal application has a fixed set of API calls written in code, while an agent decides its next action at runtime, so it has countless possible destinations.",
+      "A network proxy answers where and how to route a request. An LLM gateway gives the agent one unified interface to many model providers and centralizes credentials, routing, rate limits, logging and cost tracking.",
+      "Having a tool is not the same as being allowed every action through it. A gateway can inspect which tool is called and with what parameters, and block a ₹90 refund when the policy caps refunds at ₹50.",
+      "The agent and the gateway do different jobs. The agent decides what to do next; the gateway checks whether that request complies with policy. The gateway isn't intelligent, it evaluates rules.",
+      "Writing authorization logic inside every tool works at first but scatters policy as the system grows. A gateway gives one central control boundary.",
+      "That central point is also a critical component: it must handle auth, rate limiting, retries, logging, timeouts and sensitive traffic, and a misconfigured gateway becomes a single point of failure.",
+    ],
+    chapters: [
+      {
+        start: 0,
+        title: "Who stops the AI agent?",
+        paragraphs: [
+          "Imagine an AI agent has access to your GitHub, your database, the payment system, MCP tools and multiple LLMs. Then the agent says: \"I need to issue a refund of 90 rupees.\" But there is a problem. The agent only has permission to issue refunds up to 50 rupees. So the question is: who will stop the agent?",
+          "Hey, I'm Harsh. On this channel we break down what is actually happening inside AI systems, from models and agents to the infrastructure running them at scale.",
+        ],
+      },
+      {
+        start: 21,
+        title: "What is an AI agent proxy?",
+        paragraphs: [
+          "Today we'll talk about proxies for AI agents. The interesting part is that the basic idea of a proxy is actually very simple. However, when the same concept is applied to AI agents, a proxy doesn't just remain something that forwards traffic. It can become a critical boundary between the agent and its access.",
+          "By the end of this video we will clearly understand what a proxy does, what role a proxy plays in the case of AI agents, and what a gateway actually controls.",
+        ],
+      },
+      {
+        start: 53,
+        title: "What is a proxy?",
+        paragraphs: [
+          "First, let's understand a basic proxy. There is an application and a server. Whenever our application needs to send a request to the server, it sends the request directly, and the response is sent directly back to the application.",
+          "Now let's place a proxy in the middle. Your application is no longer directly connected to the server; the proxy sits in between. The application sends the request to the proxy, the proxy routes it to the destination, and the response returns along the exact same path: the server sends it to the proxy, and the proxy delivers it to your application.",
+          "Because of this simple \"middleman\" idea, a proxy can be very useful: for routing, traffic control, logging, access policies, or isolating infrastructure from the destination.",
+        ],
+      },
+      {
+        start: 95,
+        title: "Why agents change the problem",
+        paragraphs: [
+          "In the case of AI agents, a new challenge arises. In a normal application, you first decide which API to call and then write the code for it. With an agent, it decides on its own what the next action should be. Today it calls a database, tomorrow it calls GitHub, and the next day it calls a payment system.",
+          "This means the agent doesn't have just one destination; it has countless possible actions. And this is where the role of the proxy becomes interesting, because the question is no longer just how to deliver the request to the destination. The question is what the agent should actually be allowed to do.",
+        ],
+      },
+      {
+        start: 127,
+        title: "Network proxy vs LLM gateway",
+        paragraphs: [
+          "Remember this simple distinction: a network proxy asks where and how to route a request. If an agent needs internet access, the network proxy can route the request, manage traffic control, and provide an infrastructure boundary.",
+          "But an agent doesn't just talk to the internet; it also needs to communicate with models. On one side you have the external world: websites, APIs and search engines. On the other side is the agent's brain: the model. That is where the second proxy comes in, the LLM gateway.",
+          "Suppose our application uses different models: sometimes OpenAI, sometimes Anthropic, sometimes a local model. Without a gateway, we would need to integrate every provider into our application individually. With a gateway, we connect the agent to the gateway and the gateway connects to all the models. It provides a unified interface, and at the same time credentials, routing, rate limits, logging, cost tracking and traffic policies can all be centralized.",
+          "So both sides are clear: the network proxy handles how the agent's traffic goes out to the outside world, and the LLM gateway manages model traffic between the agent and the application.",
+        ],
+      },
+      {
+        start: 193,
+        title: "Tools, MCP and the ₹90 refund problem",
+        paragraphs: [
+          "Agents also possess another crucial element: tools. An agent doesn't just need models; it needs tools as well, and this is where protocols like MCP can be very useful. Consider an agent that has access to a payment refund tool and triggers a tool call.",
+          "Now comes the obvious question: just because a tool is available, should the agent be allowed to execute every single action through it? Not necessarily.",
+          "Return to the refund example. The agent decides it wants to issue a refund of 90 rupees. However, the policy states that the agent can only issue a maximum refund of 50 rupees. If we only verify whether the agent has refund capability, the answer is yes. But that doesn't mean the agent should be able to refund 90 rupees. This is where the real value of a gateway becomes apparent.",
+        ],
+      },
+      {
+        start: 242,
+        title: "Agent decides. Gateway enforces.",
+        paragraphs: [
+          "A gateway can inspect the request: which tool the caller is invoking, what parameters are inside the request, and then enforce the policy. If the refund amount is greater than 50, the request to issue a 90-rupee refund is blocked before it ever reaches the payment system.",
+          "Here an important distinction emerges: the agent and the gateway do not do the same job. The agent's job is to decide what to do next, and the gateway's job is to check whether that request complies with policy. The agent decides, and the gateway enforces.",
+          "A gateway is not an intelligent entity on its own. It is given rules, and it evaluates incoming requests against those policies. Because of this, the gateway can serve as a centralized control boundary.",
+        ],
+      },
+      {
+        start: 284,
+        title: "Why centralized gateways matter, and the trade-off",
+        paragraphs: [
+          "Imagine you have an agent in production with access to your GitHub, your database and your payment system, and more tools keep getting added over time. Writing individual authorization logic inside every single tool is possible, but as the system scales, policies quickly become scattered. A gateway provides a single, central boundary.",
+          "Still, adding a gateway isn't trivial. It introduces another critical component to your architecture. The gateway must now correctly manage authentication, authorization, rate limiting, retries, logging, timeouts and potentially sensitive traffic. If the gateway is misconfigured, that centralized control point can turn into a single point of failure.",
+        ],
+      },
+      {
+        start: 330,
+        title: "The one-door mental model",
+        paragraphs: [
+          "Picture a building. Inside are many rooms: one houses the database, another the LLM, another payments, and others hold various tools. If the agent needs access to these rooms and each room has its own unmonitored entrance, control becomes nearly impossible. A gateway acts as the secure main entrance. The agent arrives with a request, the gateway inspects it, and only then routes it to the permitted destination.",
+          "In a real-world system it looks like this: user to agent, agent to gateway, and gateway connected to multiple tools. A gateway isn't a single magical black box. Across different architectures, the network proxy, LLM gateway, tool gateway and authorization layer might be distinct components.",
+        ],
+      },
+      {
+        start: 368,
+        title: "The core principle",
+        paragraphs: [
+          "Yet the core architectural principle is simple: place a control boundary between the agent and the systems it can impact.",
+          "Perhaps the most useful way to understand a proxy for AI agents is this: its purpose is not merely forwarding traffic down the line. When an agent accesses dozens of systems, that middle layer doesn't dictate what the agent thinks; it controls which of the agent's intended actions are actually permitted to reach the system. The agent decides, and the gateway enforces. And as agents gain wider access, this boundary will only become more critical.",
+          "If you enjoy deep dives into AI system architecture, let me know in the comments which AI infrastructure concept we should break down next.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: "What is a proxy?",
+        a: "A proxy is a middleman between an application and a server. The application sends requests to the proxy, the proxy routes them to the destination, and responses come back along the same path. That position makes it useful for routing, traffic control, logging, access policies and isolating infrastructure.",
+      },
+      {
+        q: "Why do AI agents need a different kind of proxy?",
+        a: "A normal application has a fixed set of API calls written in code. An agent decides its next action at runtime, so it may call a database today, GitHub tomorrow and a payment system the day after. The question shifts from how to route a request to what the agent should be allowed to do.",
+      },
+      {
+        q: "What is the difference between a network proxy and an LLM gateway?",
+        a: "A network proxy handles how the agent's traffic goes out to the external world: websites, APIs and search engines. An LLM gateway sits between the agent and the models, giving one unified interface to providers like OpenAI, Anthropic or a local model while centralizing credentials, routing, rate limits, logging and cost tracking.",
+      },
+      {
+        q: "What is a tool gateway for AI agents?",
+        a: "A layer that inspects an agent's tool calls, including which tool is invoked and what parameters are in the request, and enforces policy before the call reaches the real system. For example, it can block a ₹90 refund when the policy caps refunds at ₹50, even though the agent has the refund tool.",
+      },
+      {
+        q: "What does \"the agent decides, the gateway enforces\" mean?",
+        a: "The agent's job is to decide what to do next. The gateway's job is to check whether that request complies with policy. The gateway isn't intelligent on its own: it is given rules and evaluates incoming requests against them.",
+      },
+      {
+        q: "Why not put authorization logic inside each tool?",
+        a: "It works at first, but as more tools are added the policies become scattered across the system. A gateway provides a single, central control boundary where policies live in one place.",
+      },
+      {
+        q: "What are the risks of a centralized agent gateway?",
+        a: "It becomes a critical component that must correctly handle authentication, authorization, rate limiting, retries, logging, timeouts and sensitive traffic. If it is misconfigured, the central control point turns into a single point of failure.",
+      },
+    ],
+  },
 ];
 
 // `videos` is kept in publication order. Display order is derived from the upload date,
