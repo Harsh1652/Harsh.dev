@@ -11,7 +11,7 @@ const PAGE_PATH = "/youtube";
 const featured = videosNewestFirst[0];
 const pageTitle = "YouTube — AI Architecture & Infrastructure Explained";
 const pageDescription =
-  "Video breakdowns by Harsh Gupta on how modern AI systems work — model architecture, scaling and inference — with chapters, key takeaways and full transcripts. Latest: AI agent harnesses, and looped transformers in OpenAI's Astra.";
+  "Video breakdowns by Harsh Gupta on how modern AI systems work — model architecture, scaling and inference — with chapters, key takeaways and full transcripts. Latest: how to build an AI app for a million users, AI agent proxies, and looped transformers in OpenAI's Astra.";
 
 export const metadata: Metadata = {
   title: pageTitle,
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     canonical: PAGE_PATH,
     types: { "application/rss+xml": [{ url: "/feed.xml", title: `${site.name} — AI architecture breakdowns` }] },
   },
-  keywords: ["Invisigent YouTube", "Harsh Gupta YouTube", "AI architecture explained", "AI agent harness", "AI agents", "looped transformer", "OpenAI Astra", "AI scaling", "LLM inference", "video transcript"],
+  keywords: ["Invisigent YouTube", "Harsh Gupta YouTube", "AI architecture explained", "AI system design", "AI gateway", "model routing", "AI agents", "looped transformer", "OpenAI Astra", "AI scaling", "LLM inference", "video transcript"],
   openGraph: {
     type: "website",
     url: absoluteUrl(PAGE_PATH),

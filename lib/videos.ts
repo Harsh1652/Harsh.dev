@@ -575,6 +575,251 @@ export const videos: Video[] = [
       },
     ],
   },
+  {
+    id: "NhGSiRkf5ZU",
+    slug: "ai-app-for-1-million-users",
+    title: "How to Build an AI App for 1 Million Users",
+    description:
+      "How do you design an AI application that can scale to a million users? A system-design walkthrough of an Instagram-style AI chat feature: traffic estimates, interactive vs background workloads, AI gateways, model routing, queues, RAG, and why cost can break a system that looks healthy.",
+    summary:
+      "Building an AI feature is easy until millions of people use it. Using a hypothetical Instagram-style AI chat as a case study, Harsh Gupta starts from a traffic estimate — tens of millions of requests a day, hundreds of requests per second on average — and shows why averages lie, why AI work cannot share the same path as likes and feed loads, and how the architecture grows as each bottleneck appears. Interactive chat streams through a short path; long jobs go to queues and specialized workers. An AI gateway and model router keep inference costs under control. The lesson is not to add more servers: it is to find what breaks first, isolate it, and scale that part — because handling a million users reliably and profitably is the real engineering problem.",
+    uploadDate: "2026-10-27T06:30:00-07:00",
+    duration: "PT13M52S",
+    durationLabel: "13:52",
+    topics: ["AI system design", "Scalability", "AI gateway", "Model routing", "Queues & workers", "RAG", "Workload isolation"],
+    takeaways: [
+      "Average RPS is only a baseline. Real traffic spikes — evenings, virality, a creator posting about the feature — so the architecture has to be ready for peaks, not the daily average.",
+      "AI work is slow compared with likes and feed loads. If you couple them on the same resources, caption generation can starve the rest of the app.",
+      "Use a queue only when the user is not waiting. Interactive chat should stay a short path: API, model router, LLM, stream tokens as they arrive.",
+      "An AI gateway centralizes rate limiting, model routing, provider fallback, caching and cost tracking so inference policy lives in one place.",
+      "Not every request needs the strongest model. Route simple tasks to small, cheap models and reserve larger ones for work that justifies the cost.",
+      "A production AI system can look healthy on CPU and latency and still go bankrupt on tokens, retries and tool calls. Track cost per conversation, not just request rate.",
+      "Scale the bottleneck, not the whole system. Different workloads — APIs, workers, models, storage — should scale independently.",
+    ],
+    chapters: [
+      {
+        start: 0,
+        title: "How to architect an AI app at scale",
+        paragraphs: [
+          "If you had to build an AI feature at Instagram's kind of scale — Meta AI in DMs — how would you architect it? Building the feature is easy: call an API, get a response. The real engineering starts when millions of people use it.",
+          "Harsh does not draw the full architecture up front. As each problem appears, a new component gets added. The case study is hypothetical; the traffic numbers are illustrative, not Meta's internals.",
+        ],
+      },
+      {
+        start: 32,
+        title: "Estimating traffic: 10 million users",
+        paragraphs: [
+          "Instagram has more than 500 million daily active users. Even if only 2% use the AI feature in a day, that is 10 million people. At three messages each, 30 million requests a day — roughly 350 requests per second on average. Treat it like a normal feed or like request and the system will crash.",
+        ],
+      },
+      {
+        start: 85,
+        title: "Why average traffic lies",
+        paragraphs: [
+          "Traffic is never uniform. Evenings get busier, a feature can go viral, a creator posts about it, and 350 requests per second can spike to several thousand. The average is a baseline. The architecture has to be built for the peak.",
+        ],
+      },
+      {
+        start: 113,
+        title: "Normal requests vs. AI requests",
+        paragraphs: [
+          "Loading photos, commenting and liking are fast: fetch from the database and return. Ask the AI for a caption and the path now includes an LLM, which can take seconds. Couple that work with the rest of the application and the AI feature starts consuming resources the rest of the system needs.",
+        ],
+      },
+      {
+        start: 149,
+        title: "The restaurant analogy: workload contention",
+        paragraphs: [
+          "Think of the backend as a restaurant. Feed, likes and comments are cold drinks — fast to serve. Generating a caption is a slow-cooked dish. If one chef does both, everyone waits for the five-minute plate. The problem is not the chef. Different workloads are sharing the same resources.",
+        ],
+      },
+      {
+        start: 181,
+        title: "Interactive AI vs. background AI",
+        paragraphs: [
+          "Workloads have different latency requirements. In chat, the user is sitting in front of the screen waiting. Other work — parsing a 500-page PDF, chunking, embedding, indexing — can happen in the background. Split them into two categories before you pick a queue.",
+        ],
+      },
+      {
+        start: 193,
+        title: "Why interactive AI needs streaming",
+        paragraphs: [
+          "For interactive chat you want the path as short as possible: API, model router, LLM. As soon as tokens start arriving, stream them so the user is not waiting for the full answer. Rate limiting, caching, retrieval and routing can still sit on that path. What you should not add is an unnecessary queue that puts ten jobs ahead of a person who is waiting.",
+        ],
+      },
+      {
+        start: 240,
+        title: "Background AI: queues and workers",
+        paragraphs: [
+          "A 500-page upload needs parsing, chunking, embeddings and a vector store. You should not keep an HTTP request open for that. Accept the job immediately — \"your job has been accepted\" — and let workers pick it up, process it and store the result.",
+        ],
+      },
+      {
+        start: 268,
+        title: "When should you use a queue?",
+        paragraphs: [
+          "Do not look at AI and decide you need a queue. Look at the latency requirement. Is the user actively waiting? Interactive path, or long-running background work? Then decide whether queues and workers belong.",
+        ],
+      },
+      {
+        start: 283,
+        title: "Load balancers and stateless APIs",
+        paragraphs: [
+          "As traffic grows, run multiple API instances behind a load balancer and keep those APIs stateless so any server can handle any request. Conversation and per-user state must not live in a server's local memory. Put that in a shared system.",
+        ],
+      },
+      {
+        start: 311,
+        title: "Redis, caching and rate limiting",
+        paragraphs: [
+          "If every request hits the database, the database becomes the bottleneck. Redis caches frequently accessed data and helps with rate limiting. At this scale, rate limiting is not only security — it is cost control, because you do not want unlimited expensive inference.",
+        ],
+      },
+      {
+        start: 336,
+        title: "Building an AI gateway",
+        paragraphs: [
+          "A dedicated gateway for AI traffic centralizes AI-specific concerns: rate limiting, model routing, authentication, provider selection, fallback, observability and caching. Inference policy lives in one place instead of being scattered across services.",
+        ],
+      },
+      {
+        start: 348,
+        title: "Model routing: small vs. large models",
+        paragraphs: [
+          "Someone comments \"Nice pic\" and you ask the AI what to reply. That does not need the best model you have. A long conversation that needs a detailed response strategy is a different workload. Simple tasks go to small, fast, cheaper models; complex tasks go to stronger ones. Repeated questions can be cached so you skip the model call entirely.",
+        ],
+      },
+      {
+        start: 382,
+        title: "The hidden cost of AI inference",
+        paragraphs: [
+          "The cost of an AI request is not one request. Input tokens, output tokens, which model ran, tool calls, retries — all of it counts. In agentic cases one user action can mean several model calls. In production you have to track cost per conversation, cost per user, tokens per request, model, tool calls and cache hit rate. The system can look healthy on latency and CPU and the AI bill can still destroy you.",
+        ],
+      },
+      {
+        start: 418,
+        title: "Context management and summarization",
+        paragraphs: [
+          "A user with thousands of messages over six months cannot have the whole history sent to the LLM on every turn. That piles up input tokens and gets expensive. Store conversation state, summarize what matters, and pull only the relevant pieces for this request. The exact store depends on the workload.",
+        ],
+      },
+      {
+        start: 450,
+        title: "Specialized workers and workload isolation",
+        paragraphs: [
+          "Background work should not share one generic worker pool. Document processing and image processing have different scaling needs. If PDFs go viral, scale document workers; if image jobs surge, scale those. That is workload isolation, and at scale it is essential.",
+        ],
+      },
+      {
+        start: 468,
+        title: "Queue backpressure and worker scaling",
+        paragraphs: [
+          "Two thousand background jobs arrive in a second and workers can handle five hundred. Adding API servers will not help — the API is not the bottleneck. The queue absorbs the backlog, and queue depth tells you when to scale workers. That is backpressure: control the workload instead of letting the system overload.",
+        ],
+      },
+      {
+        start: 495,
+        title: "Object storage vs. database storage",
+        paragraphs: [
+          "Photos, videos and PDFs do not belong on the API server's local disk. Large files go to object storage, metadata to the database. Do not turn the API tier into a file store.",
+        ],
+      },
+      {
+        start: 507,
+        title: "RAG: vector search and document ingestion",
+        paragraphs: [
+          "If the AI has to answer from private documents, add a retrieval layer. Chunk at upload time, generate embeddings once, and at query time retrieve the relevant chunks. Do the expensive work once instead of repeating it on every request.",
+        ],
+      },
+      {
+        start: 524,
+        title: "Handling AI provider failures",
+        paragraphs: [
+          "Things fail. A provider slows down to seconds. If AI work and normal work are tightly coupled, one slow dependency becomes a cascading failure. Use timeouts so you do not wait forever, retries with backoff so you do not retry blindly, circuit breakers when a dependency keeps failing, and fallbacks wherever you can.",
+        ],
+      },
+      {
+        start: 551,
+        title: "Observability: monitoring AI systems",
+        paragraphs: [
+          "If you cannot answer why something is slow, expensive, or why the queue is growing, the architecture is only a diagram. Traditional apps watch CPU, memory, latency and errors. AI apps also need tokens, model latency, cost per request, model usage and cache hit rate.",
+        ],
+      },
+      {
+        start: 581,
+        title: "Building the complete architecture",
+        paragraphs: [
+          "Put it together: users, load balancer, stateless APIs, Redis and the database. AI traffic goes through the gateway. The model router decides cache hit, small model or large model. Interactive requests stream. Long-running work is queued to specialist workers. Documents sit in object storage, embeddings in a vector database, context in its own store, and the whole system is observed.",
+          "The path was incremental. Traffic grew, so load balancers. The database bottlenecked, so cache. AI-specific traffic, so a gateway. Different model needs, so a router. Long jobs, so a queue. Different processing, so specialized workers. Growing context, so context management. Large files, object storage. Knowledge, a vector database. Failures, timeouts and circuit breakers. And observability so the diagram is not the only source of truth.",
+        ],
+      },
+      {
+        start: 700,
+        title: "Seven common system design mistakes",
+        paragraphs: [
+          "Do not blindly add servers because there are a million users. Find the bottleneck first. Do not send every request through a queue — interactive work does not belong there. Do not keep one worker for everything; isolate workloads that scale differently. And complexity is not quality: you do not automatically need twenty microservices. Start simple, measure, and add complexity where it solves a real problem.",
+        ],
+      },
+      {
+        start: 749,
+        title: "The biggest lesson: find the bottleneck",
+        paragraphs: [
+          "The system design question is not how much traffic a single server can handle. A better question: what will break first, and can you isolate and scale that part independently?",
+        ],
+      },
+      {
+        start: 768,
+        title: "Applying the architecture to real problems",
+        paragraphs: [
+          "Traffic grew — scale the API layer. Database reads increased — cache and optimize the database. The queue is growing — scale the workers. Cost is rising — model routing, caching and token optimization. The provider failed — timeouts, retries or fallbacks. That is the architecture.",
+        ],
+      },
+      {
+        start: 785,
+        title: "Scale the bottleneck, not the whole system",
+        paragraphs: [
+          "To handle a million users you do not need one giant server. You need a system where different workloads scale independently.",
+        ],
+      },
+      {
+        start: 799,
+        title: "Reliability and the economics of AI",
+        paragraphs: [
+          "In AI systems every request can be expensive. You are not only designing for scale. You are designing for reliability and economics. Handling a million users is impressive. Handling a million users reliably and profitably is the real engineering problem.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: "Should every AI request go through a queue?",
+        a: "No. Queues are for work the user is not sitting and waiting on — document parsing, embeddings, re-indexing. Interactive chat should stay a short path and stream tokens. Decide from the latency requirement, not from the fact that the workload is AI.",
+      },
+      {
+        q: "Why not just add more servers when traffic grows?",
+        a: "More API servers only help if the API is the bottleneck. If workers can handle 500 jobs a second and 2,000 arrive, the queue and worker pool are the problem. Find what will break first and scale that part.",
+      },
+      {
+        q: "What does an AI gateway do?",
+        a: "It is a dedicated layer for AI traffic that centralizes rate limiting, model routing, authentication, provider selection, fallback, observability and caching so those concerns are not duplicated across services.",
+      },
+      {
+        q: "Why route some requests to smaller models?",
+        a: "A short reply to \"Nice pic\" does not need your strongest model. Simple tasks can use small, fast, cheaper models; complex analysis uses larger ones. Caching repeated questions avoids a model call entirely. That is how you keep inference cost from exploding.",
+      },
+      {
+        q: "Why can an AI system look healthy and still be too expensive?",
+        a: "CPU, memory and latency can look fine while tokens, tool calls, retries and the wrong model on easy tasks run up the bill. One user action can mean several model calls. Track cost per conversation, not only request rate.",
+      },
+      {
+        q: "What is workload isolation?",
+        a: "Different background jobs have different resource needs. Document workers and image workers should scale independently so a viral PDF upload does not starve image processing, and the other way around.",
+      },
+      {
+        q: "Is this how Instagram or Meta AI is actually built?",
+        a: "No. It is a hypothetical system-design exercise using an Instagram-style AI feature. The traffic figures are illustrative assumptions, not measured Meta traffic or a description of Meta's internal architecture.",
+      },
+    ],
+  },
 ];
 
 // `videos` is kept in publication order. Display order is derived from the upload date,
